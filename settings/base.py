@@ -1,6 +1,9 @@
 # Python modules
 from pathlib import Path
 
+# Django modules
+from django.urls import reverse_lazy
+
 # Local modules
 from settings.conf import *  # noqa: F403
 
@@ -102,3 +105,129 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ----------------------------------------------
+# Unfold Admin Configuration
+#
+UNFOLD = {
+    "SITE_TITLE": "Blog API Administration",
+    "SITE_HEADER": "Blog API",
+    "SITE_SUBHEADER": "Content & Community Management",
+    "SITE_SYMBOL": "article",
+    "ENVIRONMENT": "apps.blog.callbacks.environment_callback",
+    "DASHBOARD_CALLBACK": "apps.blog.callbacks.dashboard_callback",
+    "COMMAND": {
+        "search_models": True,
+        "show_history": True,
+    },
+    "COLORS": {
+        "primary": {
+            "50": "236 253 245",
+            "100": "209 250 229",
+            "200": "167 243 208",
+            "300": "110 231 183",
+            "400": "52 211 153",
+            "500": "16 185 129",
+            "600": "5 150 105",
+            "700": "4 120 87",
+            "800": "6 95 70",
+            "900": "6 78 59",
+            "950": "2 44 34",
+        },
+    },
+    "SITE_DROPDOWN": [
+        {
+            "icon": "code",
+            "title": "GitHub Repository",
+            "link": "https://github.com/meruyert2025/blog-django",
+        },
+        {
+            "icon": "menu_book",
+            "title": "Unfold Documentation",
+            "link": "https://unfoldadmin.com/docs/",
+        },
+    ],
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": False,
+        "navigation": [
+            {
+                "title": "Overview",
+                "separator": False,
+                "items": [
+                    {
+                        "title": "Dashboard",
+                        "icon": "dashboard",
+                        "link": reverse_lazy("admin:index"),
+                    },
+                ],
+            },
+            {
+                "title": "Content",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Posts",
+                        "icon": "article",
+                        "link": reverse_lazy("admin:blog_post_changelist"),
+                        "badge": "apps.blog.callbacks.drafts_badge",
+                    },
+                    {
+                        "title": "Comments",
+                        "icon": "chat_bubble",
+                        "link": reverse_lazy("admin:blog_comment_changelist"),
+                    },
+                    {
+                        "title": "Categories",
+                        "icon": "category",
+                        "link": reverse_lazy("admin:blog_category_changelist"),
+                    },
+                    {
+                        "title": "Tags",
+                        "icon": "label",
+                        "link": reverse_lazy("admin:blog_tag_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": "Users & Access",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Users",
+                        "icon": "people",
+                        "link": reverse_lazy("admin:auths_user_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                    {
+                        "title": "Groups",
+                        "icon": "badge",
+                        "link": reverse_lazy("admin:auth_group_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                ],
+            },
+        ],
+    },
+    "TABS": [
+        {
+            "models": [
+                "blog.post",
+            ],
+            "items": [
+                {
+                    "title": "All",
+                    "link": lambda request: reverse_lazy("admin:blog_post_changelist"),
+                },
+                {
+                    "title": "Published",
+                    "link": lambda request: f"{reverse_lazy('admin:blog_post_changelist')}?status__exact=published",
+                },
+                {
+                    "title": "Drafts",
+                    "link": lambda request: f"{reverse_lazy('admin:blog_post_changelist')}?status__exact=draft",
+                },
+            ],
+        },
+    ],
+}
