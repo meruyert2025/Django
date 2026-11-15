@@ -1,6 +1,7 @@
 # Python modules
 import random
 import time
+from datetime import timedelta
 from typing import Any
 
 # Third-party modules
@@ -9,6 +10,7 @@ from faker import Faker
 # Django modules
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand, CommandError, CommandParser
+from django.utils import timezone
 from django.utils.text import slugify
 
 # Project modules
@@ -32,6 +34,12 @@ class Command(BaseCommand):
 
     PUBLISHED_POST_RATIO = 0.70
     NO_CATEGORY_RATIO = 0.10
+    POST_DATE_DAYS_RANGE:int=365
+    POST_UPDATED_RATIO:float=0.30
+    POST_UPDATED_MIN_DAYS:int=1
+    POST_UPDATED_MAX_DAYS:int=30
+    SECONDS_IN_DAY:int=86400
+
 
     MIN_TAGS_PER_POST = 0
     MAX_TAGS_PER_POST = 5
@@ -272,6 +280,24 @@ class Command(BaseCommand):
             post_tags_map.append(selected_tags)
 
         created_posts: list[Post] = Post.objects.bulk_create(posts_to_create)
+        now=timezone.now()
+        for post in created_posts:
+            random_seconds:int=random.randint(0,self.POST_DATE_DAYS_RANGE * self.SECONDS_IN_DAY)
+            post.created_at=now-timedelta(seconds=random_seconds)
+
+            if random.random() < self.POST_UPDATED_RATIO:
+                offset_seconds:int=random.randint(
+                    self.POST_UPDATED_MIN_DAYS * self.SECONDS_IN_DAY,
+                    self.POST_UPDATED_MAX_DAYS * self.SECONDS_IN_DAY,
+
+
+                )
+                post.updated_at=min(post.created_at+ timedelta(seconds=offset_seconds),now)
+            else:
+                post.updated_at=post.created_at
+
+        Post.objects.bulk_update(created_posts,fields=["created_at","updated_at"])
+
 
         # Attach tags using through table in bulk for efficiency and database independence
         through_records: list[Any] = []
@@ -318,8 +344,21 @@ class Command(BaseCommand):
                 )
             )
 
-        Comment.objects.bulk_create(comments_to_create)
-        return comments_to_create
+        
+        created_comments: list[Comment] = Comment.objects.bulk_create(comments_to_create)
+
+        now = timezone.now()
+        for comment in created_comments:
+            post_created_at = comment.post.created_at
+            total_seconds: int = int((now - post_created_at).total_seconds())
+            if total_seconds > 0:
+                offset_seconds: int = random.randint(0, total_seconds)
+                comment.created_at = post_created_at + timedelta(seconds=offset_seconds)
+            else:
+                comment.created_at = post_created_at
+            comment.updated_at = comment.created_at
+        Comment.objects.bulk_update(created_comments, fields=["created_at", "updated_at"])
+        return created_comments
 
     def handle(self, *args: tuple[Any, ...], **options: dict[str, Any]) -> None:
         """Command entry point."""

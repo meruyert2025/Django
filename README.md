@@ -294,3 +294,15 @@ User changelist featuring circle initials, full name, email, colored status badg
 git checkout main
 git merge hw2
 ```
+
+
+## Queries (hw3)
+ Command to benchmark and inspect all 50 Django ORM queries:
+ ```bash
+python manage.py queries
+python manage.py queries --number 31 
+python manage.py queries --number 6 --sql
+python manage.py queries --number 41
+```
+
+
